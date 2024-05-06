@@ -1,0 +1,26 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+    color: #FFF; /* Text color */
+}
+
+#gameContainer {
+    position: relative;
+}
+
+canvas {
+    display: block;
+    border: 2px solid #FFF; /* Border around canvas */
+}
+
+#overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-size: 24px;
+    font-family: 'Press Start 2P', cursive;
+    z-index: 10;
+}
