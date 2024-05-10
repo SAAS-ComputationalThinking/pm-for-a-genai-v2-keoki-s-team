@@ -7,9 +7,7 @@ let score = 0;
 let round = 1;
 let playerLives = 3;
 let enemySpeed = 1;
-let enemySpawnRate = 2000; // milliseconds (adjusted from 1000)
-let bulletCooldown = 0; // added bullet cooldown
-const bulletCooldownMax = 10; // added maximum bullet cooldown
+let enemySpawnRate = 1000; // milliseconds
 let gamePaused = false;
 let isTwoPlayerMode = false;
 let currentPlayerIndex = 0;
@@ -110,7 +108,9 @@ function spawnEnemies() {
         const enemy = {
             x: Math.random() * (canvas.width - enemyType.width),
             y: -enemyType.height,
-            type: enemyType
+            type: enemyType,
+            dx: Math.random() > 0.5 ? 1 : -1, // Randomize initial movement direction
+            dy: 1 // Initial movement downwards
         };
         enemies.push(enemy);
     }
@@ -119,8 +119,11 @@ function spawnEnemies() {
 // Function to draw bullets
 function drawBullets() {
     for (let bullet of bullets) {
+        ctx.beginPath();
+        ctx.rect(bullet.x, bullet.y, bullet.width, bullet.height);
         ctx.fillStyle = bullet.color;
-        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        ctx.fill();
+        ctx.closePath();
     }
 }
 
@@ -134,18 +137,15 @@ function moveBullets() {
 // Function to shoot bullets
 function shoot() {
     const currentPlayer = players[currentPlayerIndex];
-    if (bulletCooldown <= 0) {
-        const bullet = {
-            x: currentPlayer.x + currentPlayer.width / 2 - 2,
-            y: currentPlayer.y - 10,
-            width: 4,
-            height: 10,
-            color: "#FFFF00",
-            speed: 8
-        };
-        bullets.push(bullet);
-        bulletCooldown = bulletCooldownMax; // set cooldown
-    }
+    const bullet = {
+        x: currentPlayer.x + currentPlayer.width / 2 - 2,
+        y: currentPlayer.y - 10,
+        width: 4,
+        height: 10,
+        color: "#FFFF00",
+        speed: 8
+    };
+    bullets.push(bullet);
 }
 
 // Function to handle collisions
@@ -180,6 +180,32 @@ function gameOver() {
 }
 
 // Function to update game state
+// Function to handle collisions between player and enemies
+function handlePlayerEnemyCollisions() {
+    for (let player of players) {
+        for (let enemy of enemies) {
+            if (
+                player.x < enemy.x + enemy.type.width &&
+                player.x + player.width > enemy.x &&
+                player.y < enemy.y + enemy.type.height &&
+                player.y + player.height > enemy.y
+            ) {
+                player.lives--; // Decrease player lives
+                enemies.splice(enemies.indexOf(enemy), 1); // Remove enemy
+                if (player.lives <= 0) {
+                    // If player has no lives left, check for game over
+                    if (gameOver()) {
+                        // Game over logic
+                        alert("Game Over! Your score: " + score);
+                        document.location.reload();
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Update function - integrate collision detection with enemies
 function update() {
     if (!gamePaused) {
         for (let player of players) {
@@ -190,17 +216,9 @@ function update() {
         moveEnemies();
         spawnEnemies();
         moveBullets();
-        handleCollisions();
-        draw();
-        if (bulletCooldown > 0) {
-            bulletCooldown--; // decrement bullet cooldown
-        }
-        if (gameOver()) {
-            alert("Game Over! Your score: " + score);
-            document.location.reload();
-            return;
-        }
-        requestAnimationFrame(update);
+        handleCollisions(); // Check bullet-enemy collisions
+        handlePlayerEnemyCollisions(); // Check player-enemy collisions
+        requestAnimationFrame(draw);
     }
 }
 
